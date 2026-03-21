@@ -2,6 +2,7 @@ package main
 
 import (
 	"auth-service/internal/api"
+	"auth-service/internal/config"
 	"auth-service/internal/database"
 	"log"
 	"os"
@@ -18,8 +19,11 @@ func main() {
 	if port == "" {
 		port = "5000"
 	}
-	app := fiber.New()
+
 	database.Connect()
+	config.Migrate()
+
+	app := fiber.New()
 	api.SetUpRoutes(app)
 
 	log.Println("Server running on port:", port)
