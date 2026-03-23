@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: prometheus-service
   namespace: monitoring
+  labels:
+    app: prometheus
 spec:
   type: NodePort
   selector:
@@ -11,3 +13,4 @@ spec:
     - port: 9090
       targetPort: 9090
       nodePort: 30090
+      name: http

@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-ubuntu
+spec:
+  replicas: 3   # ✅ Now works
+
+  selector:
+    matchLabels:
+      app: user-app
+
+  template:
+    metadata:
+      labels:
+        app: user-app
+
+    spec:
+      nodeSelector:
+        role: apps   # 👈 your worker node
+
+      containers:
+        - name: ubuntu
+          image: ubuntu:latest
+          command: ["/bin/bash", "-c", "sleep infinity"]
+          tty: true
+          stdin: true

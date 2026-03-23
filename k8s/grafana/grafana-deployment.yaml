@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: grafana
   namespace: monitoring
+  labels:
+    app: grafana
 spec:
   replicas: 1
   selector:
@@ -13,8 +15,39 @@ spec:
       labels:
         app: grafana
     spec:
+      nodeSelector:
+        role: monitoring
+      
       containers:
         - name: grafana
-          image: grafana/grafana
+          image: grafana/grafana:latest
           ports:
             - containerPort: 3000
+              name: http
+          
+          # CHANGED: Added environment variables for Grafana configuration
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              value: "admin"
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: "admin"
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-piechart-panel"
+          
+          # CHANGED: Added resource limits
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          
+          # CHANGED: Added volume for persistent Grafana data
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+      
+      volumes:
+        - name: grafana-storage
+          emptyDir: {}

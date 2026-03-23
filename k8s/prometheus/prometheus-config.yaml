@@ -7,9 +7,57 @@ data:
   prometheus.yml: |
     global:
       scrape_interval: 5s
-
+      evaluation_interval: 5s
+    
     scrape_configs:
       - job_name: "node-exporter"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - monitoring
+        relabel_configs:
+          # Keep only pods with app=node-exporter label
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: node-exporter
+          # Use pod IP and port
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: "${1}:9100"
+          # Add node name as label
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+        metrics_path: /metrics
+        scrape_interval: 5s
+        scrape_timeout: 5s
+        
+      - job_name: "prometheus"
         static_configs:
-          - targets:
-              - node-exporter.monitoring.svc.cluster.local:9100
+          - targets: ["localhost:9090"]
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: prometheus-config
+#   namespace: monitoring
+# data:
+#   prometheus.yml: |
+#     global:
+#       scrape_interval: 5s      # How often to scrape targets
+#       evaluation_interval: 5s  # How often to evaluate rules
+    
+#     # CHANGED: Using static_configs instead of kubernetes_sd_configs
+#     # This eliminates the need for RBAC permissions
+#     scrape_configs:
+#       - job_name: "node-exporter"
+#         static_configs:
+#           # CHANGED: Target the Service which automatically load balances across all node-exporter pods
+#           - targets: ["node-exporter.monitoring.svc.cluster.local:9100"]
+#         metrics_path: /metrics
+#         scrape_interval: 5s
+#         scrape_timeout: 5s
+        
+#       # CHANGED: Added self-monitoring for Prometheus
+#       - job_name: "prometheus"
+#         static_configs:
+#           - targets: ["localhost:9090"]
