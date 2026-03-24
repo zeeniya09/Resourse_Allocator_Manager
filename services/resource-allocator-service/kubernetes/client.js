@@ -5,3 +5,4 @@ kc.loadFromDefault();
 
 export const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
 export const coreApi = kc.makeApiClient(k8s.CoreV1Api);
+export const k8sNetworkingApi = kc.makeApiClient(k8s.NetworkingV1Api);

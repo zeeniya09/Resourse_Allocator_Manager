@@ -6,15 +6,14 @@ export function createServiceManifest(appName, port = 80) {
             name: `${appName}-service`
         },
         spec: {
-            type: "NodePort",
+            type: "ClusterIP",
             selector: {
                 app: appName
             },
             ports: [
                 {
                     port: port,
-                    targetPort: port,
-                    nodePort: Math.floor(30000 + Math.random() * 2767) // random NodePort
+                    targetPort: port
                 }
             ]
         }

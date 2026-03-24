@@ -1,7 +1,7 @@
 export function createDeploymentManifest({
     nodeName,
     appName,
-    image = "ubuntu",
+    image = "nginx",
     cpu = "200m",
     memory = "256Mi",
     port = 80,
@@ -37,7 +37,6 @@ export function createDeploymentManifest({
                         {
                             name: appName,
                             image,
-                            command: image === "ubuntu" ? ["sleep", "3600"] : undefined,
                             ports: [
                                 {
                                     containerPort: port
@@ -49,10 +48,25 @@ export function createDeploymentManifest({
                                     memory
                                 },
                                 limits: {
-                                    cpu: "2x" ? cpu : cpu, // optional logic later
-                                    memory: "2x" ? memory : memory
+                                    cpu,
+                                    memory
                                 }
+                            },
+                            readinessProbe: {
+                                httpGet: {
+                                    path: "/",
+                                    port: port
+                                },
+                                initialDelaySeconds: 5,
+                                periodSeconds: 5
                             }
+                        }
+                    ],
+                    tolerations: [
+                        {
+                            key: "node-role.kubernetes.io/control-plane",
+                            operator: "Exists",
+                            effect: "NoSchedule"
                         }
                     ]
                 }

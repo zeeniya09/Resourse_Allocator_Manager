@@ -3,18 +3,19 @@
 // import { createServiceManifest } from "../services/service";
 // import { createDeployment, createService } from "../services/k8s.service";
 
-import { createDeployment, createService } from "../kubernetes/k8s.service.js";
+import { createDeployment, createIngress, createService } from "../kubernetes/k8s.service.js";
 import { selectBestNode } from "../scheduler/schedulerClient.js";
 import { createDeploymentManifest } from "../utils/deplyment-menifest.js";
+import { createIngressManifest } from "../utils/ingress-manifest.js";
 import { createServiceManifest } from "../utils/service-menifest.js";
 
 export async function allocateResource(req, res) {
     try {
         const node = await selectBestNode();
 
-        const appName = `user-${Date.now()}`;
+        const appName = `user-${Date.now()}-chatanya`;
 
-        // 1️⃣ Create manifests
+        // Create manifests
         const deployment = createDeploymentManifest({
             nodeName: node,
             appName,
@@ -26,21 +27,25 @@ export async function allocateResource(req, res) {
         });
 
         const service = createServiceManifest(appName);
+        const ingressManifest = createIngressManifest({ appName, host: appName });
 
-        // 2️⃣ Deploy to Kubernetes
+        //  Deploy to Kubernetes
         await createDeployment(deployment);
-        const svcRes = await createService(service);
+        await createService(service);
+        await createIngress(ingressManifest, "default");
+
 
         // 3️⃣ Extract NodePort 🔥
-        const nodePort =
-            svcRes.body.spec.ports[0].nodePort;
+        // const nodePort =
+        //     svcRes.body?.spec?.ports[0]?.nodePort || svcRes.spec?.ports[0]?.nodePort;
 
-        // 4️⃣ RETURN TO USER ✅
+        // RETURN TO USER
         res.json({
             success: true,
             appName,
             node,
-            url: `http://localhost:${nodePort}`
+            // nodePort,
+            url: `http://${appName}`
         });
 
     } catch (err) {

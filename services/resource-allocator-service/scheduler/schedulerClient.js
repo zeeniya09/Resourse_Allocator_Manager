@@ -4,6 +4,18 @@ import { getNodeMap } from "../utils/node-mapper.js";
 export async function selectBestNode() {
     const { cpu, memory } = await getNodeCPUUsage();
 
+    console.log('CPU array:', cpu);
+    console.log('Memory array:', memory);
+    console.log('CPU type:', typeof cpu);
+    console.log('Memory type:', typeof memory);
+
+    if (!cpu || !Array.isArray(cpu)) {
+        throw new Error('CPU data is not an array or is undefined');
+    }
+    if (!memory || !Array.isArray(memory)) {
+        throw new Error('Memory data is not an array or is undefined');
+    }
+
     const nodeMap = await getNodeMap();
 
     const nodeScores = {};
