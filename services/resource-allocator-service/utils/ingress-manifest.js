@@ -1,4 +1,5 @@
-export function createIngressManifest({ appName, host }) {
+export function createIngressManifest({ appName, metalLBIp }) {
+    const hostip = `${appName}.${metalLBIp}.nip.io`; // use localhost for port-forward approach
     return {
         apiVersion: "networking.k8s.io/v1",
         kind: "Ingress",
@@ -6,19 +7,21 @@ export function createIngressManifest({ appName, host }) {
             name: `${appName}-ingress`,
             annotations: {
                 "nginx.ingress.kubernetes.io/rewrite-target": "/",
+                "nginx.ingress.kubernetes.io/enable-rewrite-log": "true",
+                "nginx.ingress.kubernetes.io/skip-webhook-validation": "true"
             }
         },
         spec: {
             rules: [
                 {
-                    host,  // e.g., user-123.localhost
+                    host: hostip,
                     http: {
                         paths: [
                             {
                                 path: "/",
                                 pathType: "Prefix",
                                 backend: {
-                                    service: { name: `${appName}-svc`, port: { number: 80 } }
+                                    service: { name: `${appName}-service`, port: { number: 80 } }
                                 }
                             }
                         ]

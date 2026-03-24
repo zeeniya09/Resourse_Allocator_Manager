@@ -31,7 +31,7 @@ export function createDeploymentManifest({
                 },
                 spec: {
                     nodeSelector: {
-                        "kubernetes.io/hostname": nodeName
+                        "role": "apps"   // matches worker2 and worker3
                     },
                     containers: [
                         {
@@ -60,13 +60,6 @@ export function createDeploymentManifest({
                                 initialDelaySeconds: 5,
                                 periodSeconds: 5
                             }
-                        }
-                    ],
-                    tolerations: [
-                        {
-                            key: "node-role.kubernetes.io/control-plane",
-                            operator: "Exists",
-                            effect: "NoSchedule"
                         }
                     ]
                 }
