@@ -5,6 +5,6 @@ const app = express();
 
 app.use(express.json());
 
-app.use("/api/v1/allocate", allocationRoutes);
+app.use("/api", allocationRoutes);
 
 export default app;

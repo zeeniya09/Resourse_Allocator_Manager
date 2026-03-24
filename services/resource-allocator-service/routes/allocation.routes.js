@@ -3,6 +3,6 @@ import { allocateResource } from "../controllers/allocation.controller.js";
 
 const router = express.Router();
 
-router.post("/", allocateResource);
+router.post("/allocate", allocateResource);
 
 export default router;
