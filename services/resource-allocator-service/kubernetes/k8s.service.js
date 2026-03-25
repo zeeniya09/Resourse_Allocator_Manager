@@ -1,5 +1,4 @@
 import { coreApi, k8sApi, k8sNetworkingApi } from "./client.js";
-import * as k8s from '@kubernetes/client-node';
 import { spawn } from 'child_process';
 
 // Store active port forwards

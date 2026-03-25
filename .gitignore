@@ -54,3 +54,25 @@ Thumbs.db
 # Optional: build or dist folders (if you have any)
 dist/
 build/
+
+# Generated files
+node_modules/
+dist/
+build/
+coverage/
+
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Prisma generated client
+prisma/generated/          # If you generate client here
+node_modules/.prisma/
+node_modules/@prisma/client/
+src/generated/
+# Environment files
+.env
+.env.local
+.env.*.local
