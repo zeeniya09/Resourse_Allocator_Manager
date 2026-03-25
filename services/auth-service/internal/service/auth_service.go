@@ -20,7 +20,6 @@ func Register(email string) (*models.User, error) {
 		ID:        uuid.New().String(),
 		Email:     email,
 		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
 	}
 	
 	if err := database.DB.Create(&user).Error; err != nil {
@@ -40,7 +39,6 @@ func FindOrCreateUser(email string) (*models.User, error) {
 			ID:        uuid.New().String(),
 			Email:     email,
 			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
 		}
 		
 		if err := database.DB.Create(&user).Error; err != nil {

@@ -10,41 +10,88 @@ export async function allocateResource(req, res) {
     let allocationRecord = null;
 
     try {
+        // Extract user input with defaults
+        const {
+            email,
+            cpu = 200,
+            memory = 256,
+            image = "nginx",
+            port = 80,
+            userId // Optional: if provided, use it directly
+        } = req.body;
+
+        // Validate required inputs
+        if (!email) {
+            return res.status(400).json({
+                error: "Email is required for pod allocation"
+            });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                error: "Invalid email format"
+            });
+        }
+
+        // Validate resource limits
+        if (cpu < 50 || cpu > 1000) {
+            return res.status(400).json({
+                error: "CPU must be between 50 and 1000 millicores"
+            });
+        }
+
+        if (memory < 64 || memory > 2048) {
+            return res.status(400).json({
+                error: "Memory must be between 64 and 2048 MB"
+            });
+        }
+
+        console.log('🔍 Processing allocation request for:', { email, cpu, memory, image, port });
+
         const node = await selectBestNode();
-        const appName = `user-${Date.now()}-chatanya`;
+        const appName = `user-${Date.now()}-${email.split('@')[0]}`;
 
-        // For demo purposes, using a fixed user ID - in real app, get from auth
-        // Create or find a user with a proper UUID
-        const user = await DatabaseService.findOrCreateUser(undefined, "demo@example.com");
-        const userId = user.id;
+        // Find or create user based on email
+        console.log('🔍 About to call findOrCreateUser...');
+        const user = await DatabaseService.findOrCreateUser(userId, email);
+        const userIdToUse = user.id;
 
-        console.log('🔍 Using userId:', userId);
+        if (!userIdToUse) {
+            throw new Error('User ID is null or undefined after user creation');
+        }
+
+        console.log('✅ User ready:', { id: userIdToUse, email: user.email });
+        console.log('🔍 Using userId:', userIdToUse);
 
         // Create database record first
         allocationRecord = await DatabaseService.createAllocation({
-            userId: typeof userId === 'string' ? userId : userId.id,
+            userId: String(userIdToUse),
             appName,
             node,
-            cpu: 200,
-            memory: 256,
-            image: "nginx",
-            port: 80
+            cpu,
+            memory,
+            image,
+            port
         });
 
+        console.log('✅ Allocation record created:', allocationRecord.id);
+
         // Ensure ingress controller is port-forwarded
-        const port = await ensureIngressPortForward();
-        console.log(`Ingress controller port-forwarded to localhost:${port}`);
+        const portForward = await ensureIngressPortForward();
+        console.log(`Ingress controller port-forwarded to localhost:${portForward}`);
 
         // Create manifests
         const metalLBIp = await getIngressIp();
         const deployment = createDeploymentManifest({
             nodeName: node,
             appName,
-            image: "nginx",
-            cpu: "200m",
-            memory: "256Mi",
-            port: 80,
-            userId: "user123"
+            image,
+            cpu: `${cpu}m`,
+            memory: `${memory}Mi`,
+            port,
+            userId: userIdToUse
         });
 
         const service = createServiceManifest(appName);
@@ -59,7 +106,7 @@ export async function allocateResource(req, res) {
         const ingressResult = await createIngress(ingressManifest, "default");
 
         // Update status to RUNNING with K8s resource IDs and URL
-        const url = `http://${appName}.${metalLBIp}.nip.io:${port}`;
+        const url = `http://${appName}.${metalLBIp}.nip.io:${portForward}`;
         await DatabaseService.updateAllocationWithK8sResources(appName, {
             deploymentId: deploymentResult.body?.metadata?.name || deploymentResult.metadata?.name,
             serviceId: serviceResult.body?.metadata?.name || serviceResult.metadata?.name,
@@ -73,7 +120,15 @@ export async function allocateResource(req, res) {
             appName,
             node,
             url,
-            allocationId: allocationRecord.id
+            allocationId: allocationRecord.id,
+            userId: userIdToUse,
+            resources: {
+                cpu,
+                memory,
+                image,
+                port
+            },
+            status: 'RUNNING'
         });
 
     } catch (err) {

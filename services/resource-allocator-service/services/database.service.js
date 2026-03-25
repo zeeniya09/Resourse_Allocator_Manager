@@ -1,4 +1,5 @@
 import { PrismaClient } from '../generated/client/index.js';
+import { randomUUID } from 'crypto';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 
@@ -82,7 +83,7 @@ export class DatabaseService {
       if (!user && email) {
         user = await prisma.user.create({
           data: {
-            id: userId || require('crypto').randomUUID(),
+            id: userId || randomUUID(),
             email: email
           }
         });
@@ -114,6 +115,15 @@ export class DatabaseService {
 
     try {
       console.log('🔍 Creating allocation with data:', JSON.stringify(data, null, 2));
+
+      // Validate required fields before creating
+      if (!data.userId) {
+        throw new Error('userId is required for allocation creation');
+      }
+      if (!data.appName) {
+        throw new Error('appName is required for allocation creation');
+      }
+
       const allocation = await prisma.allocation.create({
         data: {
           userId: data.userId,
