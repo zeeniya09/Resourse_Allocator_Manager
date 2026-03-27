@@ -1,6 +1,13 @@
 "use client";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function TopBar() {
+  const { user, isAdmin, logout } = useAuth();
+
+  const displayName = user?.email?.split("@")[0] || "User";
+  const initials = displayName.charAt(0).toUpperCase();
+
   return (
     <header
       id="topbar"
@@ -50,14 +57,24 @@ export default function TopBar() {
         {/* User Profile */}
         <div className="flex items-center gap-3 pl-2">
           <div className="text-right">
-            <p className="text-xs font-bold text-white uppercase tracking-tighter italic">
-              KubeLitho
+            <p className="text-xs font-bold text-white tracking-tight">
+              {displayName}
             </p>
-            <p className="text-[10px] text-slate-500">Root Admin</p>
+            <p className="text-[10px] text-slate-500">
+              {isAdmin ? "Root Admin" : "Member"}
+            </p>
           </div>
           <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-xs font-bold text-white border border-white/10">
-            K
+            {initials}
           </div>
+          <button
+            id="btn-logout"
+            onClick={logout}
+            className="p-2 text-slate-500 hover:text-error hover:bg-error/10 rounded-full transition-all cursor-pointer"
+            title="Sign Out"
+          >
+            <span className="material-symbols-outlined text-sm">logout</span>
+          </button>
         </div>
       </div>
     </header>

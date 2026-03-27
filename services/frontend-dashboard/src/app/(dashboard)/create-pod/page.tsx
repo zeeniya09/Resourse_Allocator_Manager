@@ -1,15 +1,73 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { podApi } from "@/lib/api";
+
+const presetImages = [
+  { label: "Nginx", value: "nginx", icon: "dns", desc: "Web server & reverse proxy" },
+  { label: "Node.js", value: "node:20-alpine", icon: "javascript", desc: "JavaScript runtime" },
+  { label: "Redis", value: "redis:alpine", icon: "storage", desc: "In-memory data store" },
+  { label: "PostgreSQL", value: "postgres:16-alpine", icon: "database", desc: "Relational database" },
+  { label: "Python", value: "python:3.12-slim", icon: "code", desc: "Python runtime" },
+  { label: "Custom", value: "", icon: "edit", desc: "Specify your own image" },
+];
 
 export default function CreatePodPage() {
-  const [cpuValue, setCpuValue] = useState(512);
-  const [memoryValue, setMemoryValue] = useState(1024);
-  const [registryPath, setRegistryPath] = useState(
-    "docker.io/kubeflow/node-exporter:v1.3.1"
-  );
-  const [port, setPort] = useState("8080");
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const [cpuValue, setCpuValue] = useState(200);
+  const [memoryValue, setMemoryValue] = useState(256);
+  const [selectedImage, setSelectedImage] = useState("nginx");
+  const [customImage, setCustomImage] = useState("");
+  const [port, setPort] = useState(80);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployResult, setDeployResult] = useState<{
+    success: boolean;
+    appName?: string;
+    url?: string;
+    node?: string;
+    error?: string;
+  } | null>(null);
+
+  const effectiveImage = selectedImage || customImage;
+
+  const handleDeploy = async () => {
+    if (!effectiveImage) {
+      setDeployResult({ success: false, error: "Please select or enter a container image." });
+      return;
+    }
+
+    setIsDeploying(true);
+    setDeployResult(null);
+
+    try {
+      const result = await podApi.allocatePod({
+        email: user?.email,
+        cpu: cpuValue,
+        memory: memoryValue,
+        image: effectiveImage,
+        port,
+      });
+
+      setDeployResult({
+        success: true,
+        appName: result.appName,
+        url: result.url,
+        node: result.node,
+      });
+    } catch (err) {
+      setDeployResult({
+        success: false,
+        error: err instanceof Error ? err.message : "Deployment failed",
+      });
+    } finally {
+      setIsDeploying(false);
+    }
+  };
 
   return (
     <>
@@ -27,14 +85,12 @@ export default function CreatePodPage() {
               Deploy New Workload
             </h1>
             <p className="text-on-surface-variant max-w-2xl leading-relaxed">
-              Configure and instantiate a new container pod within the{" "}
-              <span className="text-primary font-mono">us-east-1-prod</span>{" "}
-              cluster environment. Ensure resource limits align with namespace
-              quotas.
+              Configure and instantiate a new container pod. Ensure resource
+              limits align with namespace quotas.
             </p>
           </div>
           <Link
-            href="/"
+            href="/allocations"
             className="text-slate-400 hover:text-slate-200 transition-colors p-2 hover:bg-white/5 rounded-lg"
           >
             <span className="material-symbols-outlined">close</span>
@@ -42,12 +98,94 @@ export default function CreatePodPage() {
         </div>
       </div>
 
+      {/* Success / Error Banner */}
+      {deployResult && (
+        <div
+          className={`mb-8 p-6 rounded-xl border animate-fade-in-up ${deployResult.success
+              ? "bg-green-500/10 border-green-500/20"
+              : "bg-error/10 border-error/20"
+            }`}
+        >
+          {deployResult.success ? (
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="material-symbols-outlined text-green-400 text-2xl">
+                  check_circle
+                </span>
+                <h3 className="text-lg font-bold text-green-400">
+                  Pod Deployed Successfully!
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 font-mono text-xs">
+                <div>
+                  <span className="text-slate-500 block mb-1">App Name</span>
+                  <span className="text-slate-200">{deployResult.appName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-1">Node</span>
+                  <span className="text-slate-200">{deployResult.node}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-1">URL</span>
+                  {deployResult.url ? (
+                    <a
+                      href={deployResult.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline break-all"
+                    >
+                      {deployResult.url}
+                    </a>
+                  ) : (
+                    <span className="text-slate-400">Pending...</span>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => router.push("/allocations")}
+                  className="px-4 py-2 bg-green-500/20 text-green-400 text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-green-500/30 transition-colors cursor-pointer"
+                >
+                  View Allocations
+                </button>
+                <button
+                  onClick={() => {
+                    setDeployResult(null);
+                    setCpuValue(200);
+                    setMemoryValue(256);
+                    setSelectedImage("nginx");
+                    setPort(80);
+                  }}
+                  className="px-4 py-2 bg-surface-container-high text-slate-300 text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer"
+                >
+                  Deploy Another
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-error text-2xl">
+                error
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-error">
+                  Deployment Failed
+                </h3>
+                <p className="text-xs text-error/80 mt-1">
+                  {deployResult.error}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Bento Grid Layout */}
       <div className="grid grid-cols-12 gap-8">
         {/* Left Column: Configuration */}
         <div className="col-span-12 lg:col-span-7 space-y-8">
-          {/* Container Image Section */}
-          <section className="bg-surface-container rounded-xl p-8 border border-outline-variant/10 relative overflow-hidden group animate-fade-in-up">
+          {/* Container Image Selection */}
+          <section className="bg-surface-container rounded-xl p-8 border border-outline-variant/10 relative overflow-hidden animate-fade-in-up">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <span className="material-symbols-outlined text-8xl">
                 upload_file
@@ -60,52 +198,65 @@ export default function CreatePodPage() {
               Container Image
             </h3>
 
-            {/* Drop Zone */}
-            <div className="border-2 border-dashed border-outline-variant rounded-xl p-12 text-center transition-all duration-300 hover:border-primary-container hover:bg-primary-container/5 group/dropzone cursor-pointer">
-              <div className="mb-4">
-                <span className="material-symbols-outlined text-5xl text-outline mb-2 transition-transform duration-300 group-hover/dropzone:-translate-y-2">
-                  cloud_upload
-                </span>
-              </div>
-              <p className="text-on-surface font-medium mb-1">
-                Drag and drop Docker manifest or image
-              </p>
-              <p className="text-on-surface-variant text-sm mb-6">
-                Supports .tar, .json, or OCI-compliant formats
-              </p>
-              <button className="px-6 py-2 bg-surface-container-highest border border-outline-variant rounded-lg text-sm font-bold hover:bg-surface-bright transition-colors cursor-pointer">
-                Browse Registry
-              </button>
+            {/* Image Presets */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              {presetImages.map((img) => (
+                <button
+                  key={img.label}
+                  onClick={() => {
+                    setSelectedImage(img.value);
+                    if (img.value) setCustomImage("");
+                  }}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer group ${(img.value && selectedImage === img.value) ||
+                      (!img.value && selectedImage === "")
+                      ? "border-primary-container bg-primary-container/10"
+                      : "border-outline-variant/15 bg-surface-container-low hover:border-outline-variant/30 hover:bg-surface-container-high"
+                    }`}
+                >
+                  <span className="material-symbols-outlined text-primary mb-2 block">
+                    {img.icon}
+                  </span>
+                  <p className="text-xs font-bold text-slate-200">
+                    {img.label}
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    {img.desc}
+                  </p>
+                </button>
+              ))}
             </div>
 
-            {/* Manual Registry Path */}
-            <div className="mt-8 flex items-center gap-4">
-              <div className="flex-1">
+            {/* Custom Image Input (shown when "Custom" is selected) */}
+            {selectedImage === "" && (
+              <div className="mt-4">
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                  Manual Registry Path
+                  Custom Registry Path
                 </label>
                 <div className="bg-surface-container-lowest rounded-lg p-3 border-b-2 border-outline-variant focus-within:border-primary transition-all">
                   <input
                     className="w-full bg-transparent border-none p-0 text-primary font-mono text-sm outline-none"
                     type="text"
-                    value={registryPath}
-                    onChange={(e) => setRegistryPath(e.target.value)}
+                    placeholder="docker.io/myimage:latest"
+                    value={customImage}
+                    onChange={(e) => setCustomImage(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="w-32">
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                  Port
-                </label>
-                <div className="bg-surface-container-lowest rounded-lg p-3 border-b-2 border-outline-variant focus-within:border-primary transition-all">
-                  <input
-                    className="w-full bg-transparent border-none p-0 text-on-surface font-mono text-sm outline-none"
-                    placeholder="8080"
-                    type="text"
-                    value={port}
-                    onChange={(e) => setPort(e.target.value)}
-                  />
-                </div>
+            )}
+
+            {/* Port Input */}
+            <div className="mt-6">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+                Container Port
+              </label>
+              <div className="bg-surface-container-lowest rounded-lg p-3 border-b-2 border-outline-variant focus-within:border-primary transition-all max-w-[140px]">
+                <input
+                  className="w-full bg-transparent border-none p-0 text-on-surface font-mono text-sm outline-none"
+                  placeholder="80"
+                  type="number"
+                  value={port}
+                  onChange={(e) => setPort(Number(e.target.value))}
+                />
               </div>
             </div>
           </section>
@@ -130,7 +281,7 @@ export default function CreatePodPage() {
                       CPU Millicores
                     </p>
                     <p className="text-xs text-on-surface-variant">
-                      Allocated processing power (m)
+                      Allocated processing power (50–1000m)
                     </p>
                   </div>
                   <span className="text-2xl font-black text-primary font-mono tracking-tighter">
@@ -143,14 +294,15 @@ export default function CreatePodPage() {
                 <input
                   className="w-full h-1.5 bg-surface-container-highest rounded-full appearance-none cursor-pointer accent-primary-container"
                   type="range"
-                  min={128}
-                  max={4096}
+                  min={50}
+                  max={1000}
+                  step={50}
                   value={cpuValue}
                   onChange={(e) => setCpuValue(Number(e.target.value))}
                 />
                 <div className="flex justify-between text-[10px] text-outline font-bold uppercase">
-                  <span>128m (Burst)</span>
-                  <span>4096m (Max)</span>
+                  <span>50m (Min)</span>
+                  <span>1000m (Max)</span>
                 </div>
               </div>
 
@@ -162,7 +314,7 @@ export default function CreatePodPage() {
                       Memory Allocation
                     </p>
                     <p className="text-xs text-on-surface-variant">
-                      Reserved system RAM (MB)
+                      Reserved system RAM (64–4096 MB)
                     </p>
                   </div>
                   <span className="text-2xl font-black text-primary font-mono tracking-tighter">
@@ -175,14 +327,15 @@ export default function CreatePodPage() {
                 <input
                   className="w-full h-1.5 bg-surface-container-highest rounded-full appearance-none cursor-pointer accent-primary-container"
                   type="range"
-                  min={256}
-                  max={16384}
+                  min={64}
+                  max={4096}
+                  step={64}
                   value={memoryValue}
                   onChange={(e) => setMemoryValue(Number(e.target.value))}
                 />
                 <div className="flex justify-between text-[10px] text-outline font-bold uppercase">
-                  <span>256mb</span>
-                  <span>16gb limit</span>
+                  <span>64 MB</span>
+                  <span>4096 MB</span>
                 </div>
               </div>
             </div>
@@ -200,116 +353,98 @@ export default function CreatePodPage() {
                 <span className="material-symbols-outlined text-primary">
                   visibility
                 </span>
-                Instance Insight
+                Deployment Summary
               </h3>
             </div>
             <div className="flex-1 p-8 flex flex-col">
-              {/* Image Preview */}
-              <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-6 group cursor-crosshair bg-surface-container-lowest">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-container/20 via-surface-container/50 to-inverse-primary/20" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span
-                    className="material-symbols-outlined text-primary/30"
-                    style={{ fontSize: "96px" }}
+              {/* Summary Details */}
+              <div className="space-y-4 flex-1">
+                {[
+                  {
+                    icon: "layers",
+                    label: "Image",
+                    value: effectiveImage || "Not selected",
+                  },
+                  { icon: "speed", label: "CPU", value: `${cpuValue}m` },
+                  {
+                    icon: "memory",
+                    label: "Memory",
+                    value: `${memoryValue} MB`,
+                  },
+                  { icon: "lan", label: "Port", value: port.toString() },
+                  {
+                    icon: "person",
+                    label: "Owner",
+                    value: user?.email || "—",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg"
                   >
-                    deployed_code
-                  </span>
-                </div>
-                {/* Scan Line */}
-                <div className="absolute top-0 left-0 w-full h-0.5 bg-primary/40 animate-pulse"
-                  style={{ boxShadow: "0 0 15px rgba(50,108,229,0.8)" }} />
-                <div className="absolute inset-0 bg-gradient-to-t from-surface-container via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"
-                      style={{ boxShadow: "0 0 8px rgba(34,197,94,0.6)" }} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-white drop-shadow-md">
-                      Active Schema Scan
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-primary text-sm">
+                        {item.icon}
+                      </span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                        {item.label}
+                      </span>
+                    </div>
+                    <span className="text-xs font-mono text-on-surface-variant truncate max-w-[180px]">
+                      {item.value}
                     </span>
                   </div>
-                  <h4 className="text-xl font-black text-white drop-shadow-md italic">
-                    IMAGE_RECOGNITION_PASS
-                  </h4>
-                </div>
+                ))}
               </div>
 
-              {/* Verification Info */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border-l-4 border-primary">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary text-sm">
-                      verified_user
-                    </span>
-                    <span className="text-xs font-bold uppercase tracking-wider">
-                      Visual Signature
-                    </span>
-                  </div>
-                  <span className="text-xs font-mono text-on-surface-variant">
-                    99.4% Match
+              {/* Resource Warning */}
+              {(cpuValue > 500 || memoryValue > 2048) && (
+                <div className="mt-6 p-3 rounded-lg bg-tertiary-container/10 border border-tertiary-container/20 flex items-center gap-3">
+                  <span className="material-symbols-outlined text-tertiary-container text-sm">
+                    warning
                   </span>
+                  <p className="text-[10px] text-tertiary font-medium">
+                    High resource allocation detected. Ensure namespace quota allows this.
+                  </p>
                 </div>
-                <div className="p-4 bg-surface-container-highest/30 rounded-lg">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-outline">
-                      Layer Consistency
-                    </span>
-                    <span className="text-[10px] font-bold text-primary">
-                      OPTIMAL
-                    </span>
-                  </div>
-                  <div className="flex gap-1">
-                    <div className="h-1 flex-1 bg-primary-container rounded-full" />
-                    <div className="h-1 flex-1 bg-primary-container rounded-full" />
-                    <div className="h-1 flex-1 bg-primary-container rounded-full" />
-                    <div className="h-1 flex-1 bg-primary-container/30 rounded-full" />
-                    <div className="h-1 flex-1 bg-primary-container/30 rounded-full" />
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Deploy CTA */}
-              <div className="mt-auto pt-8">
+              <div className="mt-8">
                 <button
                   id="btn-deploy-pod"
-                  className="w-full py-5 gradient-cta rounded-xl text-white font-black text-lg tracking-tight hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 cursor-pointer"
-                  style={{ boxShadow: "0 20px 40px rgba(50, 108, 229, 0.3)" }}
+                  onClick={handleDeploy}
+                  disabled={isDeploying || !effectiveImage}
+                  className="w-full py-5 gradient-cta rounded-xl text-white font-black text-lg tracking-tight hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    boxShadow: "0 20px 40px rgba(50, 108, 229, 0.3)",
+                  }}
                 >
-                  <span className="material-symbols-outlined">
-                    rocket_launch
-                  </span>
-                  DEPLOY POD
+                  {isDeploying ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin">
+                        progress_activity
+                      </span>
+                      DEPLOYING...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined">
+                        rocket_launch
+                      </span>
+                      DEPLOY POD
+                    </>
+                  )}
                 </button>
-                <p className="text-center mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
-                  Estimated Deployment: 14.2s
-                </p>
+                {!isDeploying && (
+                  <p className="text-center mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
+                    Estimated Deployment: ~15s
+                  </p>
+                )}
               </div>
             </div>
           </section>
         </div>
-      </div>
-
-      {/* Bottom Metrics */}
-      <div
-        className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-12 stagger-children"
-      >
-        {[
-          { label: "Current Load", value: "12.4%", color: "text-on-surface" },
-          { label: "Queue Status", value: "IDLE", color: "text-on-surface" },
-          { label: "Nodes Active", value: "42/42", color: "text-on-surface" },
-          { label: "System Health", value: "99.9%", color: "text-green-500" },
-        ].map((metric) => (
-          <div
-            key={metric.label}
-            className="animate-fade-in-up bg-surface-container-low p-4 rounded-lg border border-outline-variant/5"
-          >
-            <p className="text-[10px] font-bold uppercase text-outline tracking-widest mb-1">
-              {metric.label}
-            </p>
-            <p className={`text-2xl font-black ${metric.color}`}>
-              {metric.value}
-            </p>
-          </div>
-        ))}
       </div>
     </>
   );

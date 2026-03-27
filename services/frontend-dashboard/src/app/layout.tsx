@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const inter = Inter({
@@ -38,7 +39,7 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-inter), Inter, sans-serif" }}
         suppressHydrationWarning={true}
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

@@ -6,9 +6,9 @@ nodes:
   - role: control-plane
     extraPortMappings:
       - containerPort: 30090
-        hostPort: 30090
+        hostPort: 9090
       - containerPort: 30300
-        hostPort: 30300
+        hostPort: 3030
 
   - role: worker
     labels:
