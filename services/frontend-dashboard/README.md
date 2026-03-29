@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend Dashboard
 
-## Getting Started
+The **Frontend Dashboard** handles the user-facing web interface for the **Resource Allocator Manager**. Built with a modern technology stack, it provides users and administrators with secure tooling to manage, monitor, and visualize their Kubernetes allocations.
 
-First, run the development server:
+![Architecture Diagram](../../architecture.png)
+
+## 🛠 Technology Stack
+
+- **Framework:** [Next.js](https://nextjs.org/) (React 19)
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+- **Language:** TypeScript
+- **Authentication Context:** Global JWT authorization flows enforcing role-based layouts and protected pages
+- **Tooling:** ESLint, App Router Architecture
+
+## 🚀 Features
+
+- **Dark Theme Interface:** Implements an aesthetic UI/UX experience complete with dynamic responsive styles.
+- **Service Integration:** Communicates with both the Go-based `auth-service` and Node.js-based `resource-allocator-service` via standardized JSON proxy routes.
+- **Statistics View:** Clean, metric-driven screens displaying current resource allocations mapped to the current verified user sessions.
+
+## 💻 Getting Started
+
+### Prerequisites
+
+Ensure you have Node.js (v20+) installed on your machine.
+
+### Installation
+
+Install the project dependencies using npm (or bun/yarn):
+
+```bash
+npm install
+```
+
+### Running the Development Server
+
+Start the local server. *Note: this will start on port 3001 as defined in the package.json by default to prevent port conflicts with typical backend APIs.*
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the outcome. 
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Modifying any page in `src/app/` will instantly auto-update using Next.js Fast Refresh.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔗 Environment Variables
 
-## Learn More
+This service relies on correctly configured `.env` connections to interact with the Auth API and Resource Allocator API. Verify that endpoints (e.g. `NEXT_PUBLIC_AUTH_SERVICE_URL`) are present and accurate, depending on your overarching setup.
 
-To learn more about Next.js, take a look at the following resources:
+## 📦 Building for Production
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+To create an optimized production build:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run build
+```
 
-## Deploy on Vercel
+Following the build, start the production server:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run start
+```
