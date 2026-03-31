@@ -2,7 +2,7 @@
 
 The **Frontend Dashboard** handles the user-facing web interface for the **Resource Allocator Manager**. Built with a modern technology stack, it provides users and administrators with secure tooling to manage, monitor, and visualize their Kubernetes allocations.
 
-![Architecture Diagram](../../architecture.png)
+![Architecture Diagram](../../Resource-allocation-system-architecture.png)
 
 ## 🛠 Technology Stack
 

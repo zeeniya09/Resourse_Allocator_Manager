@@ -12,7 +12,7 @@ Welcome to the **Resource Allocator Manager**, a comprehensive microservices-bas
 
 ## 🏗️ Architecture Stack
 
-![Architecture Diagram](./architecture.png)
+![Architecture Diagram](./Resource-allocation-system-architecture.png)
 
 The project relies on multiple interconnected services under the `services/` directory:
 
