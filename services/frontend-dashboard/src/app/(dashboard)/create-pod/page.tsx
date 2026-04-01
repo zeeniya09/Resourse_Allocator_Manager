@@ -7,12 +7,12 @@ import { useAuth } from "@/context/AuthContext";
 import { podApi } from "@/lib/api";
 
 const presetImages = [
-  { label: "Nginx", value: "nginx", icon: "dns", desc: "Web server & reverse proxy" },
-  { label: "Node.js", value: "node:20-alpine", icon: "javascript", desc: "JavaScript runtime" },
-  { label: "Redis", value: "redis:alpine", icon: "storage", desc: "In-memory data store" },
-  { label: "PostgreSQL", value: "postgres:16-alpine", icon: "database", desc: "Relational database" },
-  { label: "Python", value: "python:3.12-slim", icon: "code", desc: "Python runtime" },
-  { label: "Custom", value: "", icon: "edit", desc: "Specify your own image" },
+  { label: "Nginx", value: "nginx", icon: "dns", desc: "Web server & reverse proxy", defaultPort: 80 },
+  { label: "Node.js", value: "node:20-alpine", icon: "javascript", desc: "JavaScript runtime", defaultPort: 3000 },
+  { label: "Redis", value: "redis:alpine", icon: "storage", desc: "In-memory data store", defaultPort: 6379 },
+  { label: "PostgreSQL", value: "postgres:16-alpine", icon: "database", desc: "Relational database", defaultPort: 5432 },
+  { label: "TTYD", value: "tsl0922/ttyd", icon: "terminal", desc: "Web-based terminal", defaultPort: 7681 },
+  { label: "Custom", value: "", icon: "edit", desc: "Specify your own image", defaultPort: 80 },
 ];
 
 export default function CreatePodPage() {
@@ -102,8 +102,8 @@ export default function CreatePodPage() {
       {deployResult && (
         <div
           className={`mb-8 p-6 rounded-xl border animate-fade-in-up ${deployResult.success
-              ? "bg-green-500/10 border-green-500/20"
-              : "bg-error/10 border-error/20"
+            ? "bg-green-500/10 border-green-500/20"
+            : "bg-error/10 border-error/20"
             }`}
         >
           {deployResult.success ? (
@@ -205,12 +205,13 @@ export default function CreatePodPage() {
                   key={img.label}
                   onClick={() => {
                     setSelectedImage(img.value);
+                    setPort(img.defaultPort);
                     if (img.value) setCustomImage("");
                   }}
                   className={`p-4 rounded-xl border text-left transition-all cursor-pointer group ${(img.value && selectedImage === img.value) ||
-                      (!img.value && selectedImage === "")
-                      ? "border-primary-container bg-primary-container/10"
-                      : "border-outline-variant/15 bg-surface-container-low hover:border-outline-variant/30 hover:bg-surface-container-high"
+                    (!img.value && selectedImage === "")
+                    ? "border-primary-container bg-primary-container/10"
+                    : "border-outline-variant/15 bg-surface-container-low hover:border-outline-variant/30 hover:bg-surface-container-high"
                     }`}
                 >
                   <span className="material-symbols-outlined text-primary mb-2 block">
@@ -220,7 +221,7 @@ export default function CreatePodPage() {
                     {img.label}
                   </p>
                   <p className="text-[10px] text-slate-500 mt-0.5">
-                    {img.desc}
+                    Port {img.defaultPort} • {img.desc}
                   </p>
                 </button>
               ))}
