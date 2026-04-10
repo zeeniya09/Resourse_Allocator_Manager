@@ -72,18 +72,25 @@ export default function DashboardPage() {
     },
   ];
 
-  return (
-    <>
-      {/* Welcome Row */}
-      <div className="mb-10 flex justify-between items-end">
-        <div>
-          <h2 className="text-3xl font-black text-on-surface tracking-tight">
-            Welcome back, {displayName}
-          </h2>
-          <p className="text-on-surface-variant text-sm mt-1">
-            Fleet overview and resource distribution across your cluster.
-          </p>
-        </div>
+ return (
+  <div>
+    {/* Welcome Row */}
+    <div className="mb-10 flex justify-between items-end">
+      <div>
+        <h2 className="text-3xl font-black text-on-surface tracking-tight">
+          Welcome back, {displayName}
+        </h2>
+
+        <p className="text-sm text-gray-400">
+          Updated by Zeeniya Singh 🚀
+        </p>
+      </div>
+    </div>
+
+    {/* Rest of your code */}
+  </div>
+);
+        
         <div className="flex gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-lg">
             <div
@@ -95,7 +102,6 @@ export default function DashboardPage() {
             </span>
           </div>
         </div>
-      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 stagger-children">
@@ -161,6 +167,6 @@ export default function DashboardPage() {
 
       {/* System Logs */}
       <SystemLogs />
-    </>
-  );
+  
+  
 }
