@@ -3,7 +3,12 @@ dotenv.config();
 
 import axios from "axios";
 
-const PROM_URL = process.env.PROM_URL;
+const NODE_ENV = process.env.NODE_ENV || "development";
+const PROM_URL = process.env.PROM_URL || (NODE_ENV === "development" ? "http://localhost:9090/api/v1/query" : "");
+
+if (!PROM_URL && NODE_ENV !== "development") {
+  throw new Error("PROM_URL is required in non-development environments");
+}
 console.log('PROM_URL:', PROM_URL);
 
 export async function getNodeCPUUsage() {

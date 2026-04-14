@@ -1,4 +1,5 @@
 import { coreApi, watch } from "../kubernetes/client.js";
+import DatabaseService from "./database.service.js";
 
 /**
  * Resolve detailed status for all pods matching appName.
@@ -134,10 +135,22 @@ export function watchPodStatus(appName, socket, namespace = "default", intervalM
             const podStatuses = await resolvePodStatuses(appName, namespace);
             const aggregateStatus = deriveAggregateStatus(podStatuses);
 
+            // Fetch the allocation URL from the database
+            let url = null;
+            try {
+                const allocation = await DatabaseService.getAllocationByAppName(appName);
+                if (allocation?.url) {
+                    url = allocation.url;
+                }
+            } catch (_) {
+                // DB might be unavailable — URL will be null
+            }
+
             const payload = {
                 appName,
                 aggregateStatus,
                 pods: podStatuses,
+                url,
                 timestamp: new Date().toISOString(),
             };
 
@@ -152,6 +165,7 @@ export function watchPodStatus(appName, socket, namespace = "default", intervalM
                 appName,
                 aggregateStatus: "Error",
                 pods: [],
+                url: null,
                 error: err.message,
                 timestamp: new Date().toISOString(),
             });

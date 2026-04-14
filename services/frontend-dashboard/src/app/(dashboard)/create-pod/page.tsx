@@ -53,18 +53,13 @@ export default function CreatePodPage() {
         port,
       });
 
-      setDeployResult({
-        success: true,
-        appName: result.appName,
-        url: result.url,
-        node: result.node,
-      });
+      // Redirect to Deployments page to watch live logs
+      router.push(`/deployments?app=${encodeURIComponent(result.appName)}`);
     } catch (err) {
       setDeployResult({
         success: false,
         error: err instanceof Error ? err.message : "Deployment failed",
       });
-    } finally {
       setIsDeploying(false);
     }
   };
@@ -99,84 +94,22 @@ export default function CreatePodPage() {
       </div>
 
       {/* Success / Error Banner */}
-      {deployResult && (
-        <div
-          className={`mb-8 p-6 rounded-xl border animate-fade-in-up ${deployResult.success
-            ? "bg-green-500/10 border-green-500/20"
-            : "bg-error/10 border-error/20"
-            }`}
-        >
-          {deployResult.success ? (
+      {/* Error Banner (success redirects to /deployments) */}
+      {deployResult && !deployResult.success && (
+        <div className="mb-8 p-6 rounded-xl border animate-fade-in-up bg-error/10 border-error/20">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-error text-2xl">
+              error
+            </span>
             <div>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="material-symbols-outlined text-green-400 text-2xl">
-                  check_circle
-                </span>
-                <h3 className="text-lg font-bold text-green-400">
-                  Pod Deployed Successfully!
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 font-mono text-xs">
-                <div>
-                  <span className="text-slate-500 block mb-1">App Name</span>
-                  <span className="text-slate-200">{deployResult.appName}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block mb-1">Node</span>
-                  <span className="text-slate-200">{deployResult.node}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block mb-1">URL</span>
-                  {deployResult.url ? (
-                    <a
-                      href={deployResult.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline break-all"
-                    >
-                      {deployResult.url}
-                    </a>
-                  ) : (
-                    <span className="text-slate-400">Pending...</span>
-                  )}
-                </div>
-              </div>
-              <div className="mt-4 flex gap-3">
-                <button
-                  onClick={() => router.push("/allocations")}
-                  className="px-4 py-2 bg-green-500/20 text-green-400 text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-green-500/30 transition-colors cursor-pointer"
-                >
-                  View Allocations
-                </button>
-                <button
-                  onClick={() => {
-                    setDeployResult(null);
-                    setCpuValue(200);
-                    setMemoryValue(256);
-                    setSelectedImage("nginx");
-                    setPort(80);
-                  }}
-                  className="px-4 py-2 bg-surface-container-high text-slate-300 text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-surface-container-highest transition-colors cursor-pointer"
-                >
-                  Deploy Another
-                </button>
-              </div>
+              <h3 className="text-sm font-bold text-error">
+                Deployment Failed
+              </h3>
+              <p className="text-xs text-error/80 mt-1">
+                {deployResult.error}
+              </p>
             </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-error text-2xl">
-                error
-              </span>
-              <div>
-                <h3 className="text-sm font-bold text-error">
-                  Deployment Failed
-                </h3>
-                <p className="text-xs text-error/80 mt-1">
-                  {deployResult.error}
-                </p>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       )}
 

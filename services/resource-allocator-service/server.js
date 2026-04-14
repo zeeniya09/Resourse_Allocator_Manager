@@ -9,6 +9,9 @@ import DatabaseService from "./services/database.service.js";
 import { podSocketHandler } from "./sockets/podSocket.js";
 
 const PORT = process.env.PORT || 5000;
+const corsOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((s) => s.trim()).filter(Boolean)
+    : "*";
 
 // Initialize database connection
 async function initializeServer() {
@@ -28,7 +31,7 @@ async function initializeServer() {
         // Attach Socket.IO to the HTTP server
         const io = new SocketIOServer(server, {
             cors: {
-                origin: "*",
+                origin: corsOrigin,
                 methods: ["GET", "POST"],
             },
             pingTimeout: 60000,

@@ -76,3 +76,6 @@ src/generated/
 .env
 .env.local
 .env.*.local
+
+# Allow .env.example files for documentation
+!.env.example

@@ -14,7 +14,7 @@ export function getCurrentIngressPort() {
 }
 
 export async function getIngressIp() {
-    return "127.0.0.1"; // Always use localhost for port-forward approach
+    return process.env.INGRESS_IP || "127.0.0.1";
 }
 
 // Check if port-forward is actually responding

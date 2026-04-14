@@ -5,9 +5,13 @@ import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
 
+const corsOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((s) => s.trim()).filter(Boolean)
+    : "*";
+
 // Enable CORS for cross-service communication
 app.use(cors({
-    origin: "*",
+    origin: corsOrigin,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
 }));

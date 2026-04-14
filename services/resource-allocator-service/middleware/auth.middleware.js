@@ -1,6 +1,13 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-me';
+import dotenv from "dotenv";
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const NODE_ENV = process.env.NODE_ENV || "development";
+if (!JWT_SECRET && NODE_ENV !== "development") {
+    throw new Error("JWT_SECRET is required in non-development environments");
+}
 
 // Middleware to authenticate JWT tokens
 const authenticate = (req, res, next) => {
